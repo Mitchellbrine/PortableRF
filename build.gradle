@@ -1,0 +1,114 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+    }
+}
+
+apply plugin: 'forge'
+
+boolean fullbuild=true
+
+version = "1.0.0-alpha"
+group= "magiciansartifice" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "MagiciansArtifice"
+
+minecraft {
+    version = "1.7.10-10.13.4.1448-1.7.10"
+    runDir = "eclipse/assets"
+
+    // replacing
+    replace "@MC_VERSION@", project.minecraft.version
+    replace "@VERSION@", project.version
+}
+
+//Shinies for JamCraft Jenkins, but only on Jenkins
+if (System.getenv()['BUILD_NUMBER']) {
+    version += "-jnks" + System.getenv()['BUILD_NUMBER']
+    fullbuild=false
+}
+
+if(System.getenv().DRONE_BUILD_NUMBER)
+{
+	version += "-droneio"+System.getenv().DRONE_BUILD_NUMBER
+    fullbuild=false
+}
+
+repositories{
+    maven { // The repo from which to get waila
+        name "Mobius Repo"
+        url "http://mobiusstrip.eu/maven"
+    }
+	maven {
+		name = "chickenbones"
+		url = "http://chickenbones.net/maven"
+	}
+
+}
+dependencies {
+    //not needed (possibly even bad) because automatically done by Gradle
+    //compile fileTree(dir: 'libs', include: '*.jar')
+    //actually unneeded because of fancy gradle magic w/ Waila, but here for clarity
+	//compile "codechicken:NotEnoughItems:1.7.2-1.0.1:dev"
+    //compile "mcp.mobius.waila:Waila:1.5.4a_1.7.10:dev"
+
+}
+processResources
+{
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+// change the name of my obfuscated jar
+jar {
+    classifier = 'universal'
+}
+
+// add a source jar
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'src'
+}
+
+// add a javadoc jar
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from 'build/docs/javadoc'
+    classifier = 'javadoc'
+}
+
+// because the normal output has been made to be obfuscated
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    //appendix = 'deobf'
+    classifier = 'deobf'
+}
+
+
+artifacts {
+    if(fullbuild)
+    {
+    archives sourceJar
+    archives javadocJar
+    }
+	archives deobfJar
+}
