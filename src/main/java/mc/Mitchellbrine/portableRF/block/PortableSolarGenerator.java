@@ -1,9 +1,11 @@
 package mc.Mitchellbrine.portableRF.block;
 
 import mc.Mitchellbrine.portableRF.block.tile.TileEntitySolarGenerator;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -50,14 +52,21 @@ public class PortableSolarGenerator extends BlockContainer {
 	}
 
 	@Override
-	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int metadata, int fortune) {
-		ArrayList<ItemStack> stacks = new ArrayList<ItemStack>();
-		ItemStack stack = new ItemStack(ItemBlock.getItemFromBlock(this),1,metadata);
-		TileEntity te = world.getTileEntity(x, y, z);
+	public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_) {
+		ItemStack stack = new ItemStack(ItemBlock.getItemFromBlock(this),1,p_149749_6_);
+		TileEntity te = p_149749_1_.getTileEntity(p_149749_2_, p_149749_3_, p_149749_4_);
 		NBTTagCompound nbt = new NBTTagCompound();
 		te.writeToNBT(nbt);
 		stack.setTagCompound(nbt);
-		stacks.add(stack);
-		return stacks;
+		EntityItem item = new EntityItem(p_149749_1_,p_149749_2_,p_149749_3_,p_149749_4_,stack);
+		item.setLocationAndAngles(p_149749_2_,p_149749_3_,p_149749_4_,0F,0F);
+		item.setEntityItemStack(stack);
+		p_149749_1_.spawnEntityInWorld(item);
+		super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
+	}
+
+	@Override
+	public ArrayList<ItemStack> getDrops(World world, int x, int y, int z, int metadata, int fortune) {
+		return new ArrayList<ItemStack>();
 	}
 }

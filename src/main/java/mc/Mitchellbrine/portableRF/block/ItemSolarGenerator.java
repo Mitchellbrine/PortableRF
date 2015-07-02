@@ -1,11 +1,14 @@
 package mc.Mitchellbrine.portableRF.block;
 
+import codechicken.lib.math.MathHelper;
 import cofh.api.energy.IEnergyContainerItem;
 import cofh.lib.util.helpers.EnergyHelper;
 import cofh.lib.util.helpers.ItemHelper;
 import cofh.thermalexpansion.ThermalExpansion;
 import cofh.thermalexpansion.item.ItemCapacitor;
+import mc.Mitchellbrine.portableRF.block.tile.TileEntitySolarGenerator;
 import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemBlock;
@@ -31,13 +34,22 @@ public class ItemSolarGenerator extends ItemBlock implements IEnergyContainerIte
 		return var1.stackTagCompound == null?ItemCapacitor.CAPACITY[ItemHelper.getItemDamage(var1)]:ItemCapacitor.CAPACITY[ItemHelper.getItemDamage(var1)] - var1.stackTagCompound.getInteger("Energy");
 	}
 
+	@Override
+	public void onUpdate(ItemStack p_77663_1_, World worldObj, Entity p_77663_3_, int p_77663_4_, boolean p_77663_5_) {
+		if (worldObj != null && !worldObj.isRemote) {
+			if (worldObj.canBlockSeeTheSky(MathHelper.floor_double(p_77663_3_.posX),MathHelper.floor_double(p_77663_3_.posY),MathHelper.floor_double(p_77663_3_.posZ)) && worldObj.getSunBrightnessFactor(worldObj.getWorldTime()) >= 0.5) {
+				receiveEnergy(p_77663_1_,p_77663_1_.getItemDamage() * Math.min(8, (int)(worldObj.getSunBrightnessFactor(worldObj.getWorldTime()) * 16) - 7), false);
+			}
+		}
+	}
+
 	public int getMaxDamage(ItemStack var1) {
 		return ItemCapacitor.CAPACITY[ItemHelper.getItemDamage(var1)];
 	}
 
 	public int receiveEnergy(ItemStack var1, int var2, boolean var3) {
 		int var4 = ItemHelper.getItemDamage(var1);
-		if(var4 <= ItemCapacitor.Types.POTATO.ordinal()) {
+		if(var4 <= ItemCapacitor.Types.CREATIVE.ordinal()) {
 			return 0;
 		} else {
 			if(var1.stackTagCompound == null) {
@@ -45,7 +57,8 @@ public class ItemSolarGenerator extends ItemBlock implements IEnergyContainerIte
 			}
 
 			int var5 = var1.stackTagCompound.getInteger("Energy");
-			int var6 = Math.min(var2, Math.min(ItemCapacitor.CAPACITY[var4] - var5, ItemCapacitor.RECEIVE[var4]));
+			int receive = ItemCapacitor.Types.POTATO.ordinal() == var4 ? TileEntitySolarGenerator.RECEIVE[var4] : ItemCapacitor.RECEIVE[var4];
+			int var6 = Math.min(var2, Math.min(ItemCapacitor.CAPACITY[var4] - var5, receive));
 			if(!var3 && var1.getItemDamage() != ItemCapacitor.Types.CREATIVE.ordinal()) {
 				var5 += var6;
 				var1.stackTagCompound.setInteger("Energy", var5);
@@ -65,9 +78,6 @@ public class ItemSolarGenerator extends ItemBlock implements IEnergyContainerIte
 		if(!var3 && var1.getItemDamage() != ItemCapacitor.Types.CREATIVE.ordinal()) {
 			var4 -= var5;
 			var1.stackTagCompound.setInteger("Energy", var4);
-			if(var4 == 0 && var1.getItemDamage() == ItemCapacitor.Types.POTATO.ordinal()) {
-				var1.func_150996_a(Items.baked_potato);
-			}
 		}
 
 		return var5;
